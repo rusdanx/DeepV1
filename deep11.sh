@@ -1,53 +1,32 @@
-# สีสำหรับข้อความใน PowerShell
-$Red = "Red"
-$Green = "Green"
-$Yellow = "Yellow"
-$NC = "ResetColor"
+#!/bin/bash
 
-# ตัวแปร
-$DEB_PACKAGE = "Agent-Core-Ubuntu_22.04-20.0.1-19250.x86_64.deb"
-$DOWNLOAD_URL = "https://dtdreport.inet.co.th/index.php/s/6FFDTDHK8D5y84Y/download/$DEB_PACKAGE"
-$ACTIVATION_URL = "dsm://203.151.126.177:4120/"
-$POLICY_ID = "policyid:13"
+# Color codes
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
-# ฟังก์ชันแสดงข้อความสถานะ
-function Print-Success {
-    Write-Host $args[0] -ForegroundColor $Green
+# Function to print commands in green
+print_command() {
+    echo -e "${GREEN}Running: $1${NC}"
 }
 
-function Print-Warning {
-    Write-Host $args[0] -ForegroundColor $Yellow
-}
+# The commands with printed messages before execution
+print_command "wget"
+wget https://dtdreport.inet.co.th/index.php/s/6FFDTDHK8D5y84Y/download/Agent-Core-Ubuntu_22.04-20.0.1-19250.x86_64.deb
 
-function Print-Error {
-    Write-Host $args[0] -ForegroundColor $Red
-}
+print_command "chmod"
+chmod 777 Agent-Core-Ubuntu_22.04-20.0.1-19250.x86_64.deb
 
-# ขั้นตอนที่ 1: ดาวน์โหลดแพคเกจ
-Print-Warning "Downloading package from $DOWNLOAD_URL..."
-Invoke-WebRequest -Uri $DOWNLOAD_URL -OutFile $DEB_PACKAGE
-if ($?) {
-    Print-Success "Package downloaded successfully."
-} else {
-    Print-Error "Failed to download package."
-}
+print_command "dpkg"
+dpkg -i Agent-Core-Ubuntu_22.04-20.0.1-19250.x86_64.deb
 
-# ขั้นตอนที่ 2: เปลี่ยนสิทธิ์ของไฟล์ (PowerShell ไม่ใช้ chmod)
-Print-Warning "Changing permissions for $DEB_PACKAGE..."
-# PowerShell doesn't require chmod as Windows handles permissions differently.
-Print-Success "Permissions checked successfully."
+print_command "/opt/ds_agent/dsa_control -r"
+sudo /opt/ds_agent/dsa_control -r
 
-# ขั้นตอนที่ 3: ติดตั้งแพ็คเกจ (dpkg ใช้สำหรับ Linux ไม่ใช้กับ Windows)
-Print-Warning "Installing $DEB_PACKAGE..."
-# ใช้คำสั่งที่เหมาะสมใน Windows หรือถ้าคุณใช้ WSL ก็สามารถเรียก dpkg ได้ใน WSL
+print_command "/opt/ds_agent/dsa_control -a with ACTIVATIONURL"
+sudo /opt/ds_agent/dsa_control -a $ACTIVATIONURL "policyid:13"
 
-# ขั้นตอนที่ 4: ลบ Agent เก่าหากมีอยู่
-Print-Warning "Removing any existing agent..."
-# ใช้คำสั่ง PowerShell หรือ WSL เรียกคำสั่งจาก Linux
+print_command "/opt/ds_agent/dsa_control -a dsm://203.151.126.177:4120/ with policyid:13"
+sudo /opt/ds_agent/dsa_control -a dsm://203.151.126.177:4120/ "policyid:13"
 
-# ขั้นตอนที่ 5: Activate Agent ใหม่
-Print-Warning "Activating new agent with $POLICY_ID at $ACTIVATION_URL..."
-# PowerShell: ใช้คำสั่งเพื่อ activate agent
-
-# สรุปขั้นตอนการติดตั้ง
-Print-Success "Agent installed and activated successfully."
+echo -e "${GREEN}Installation complete${NC}"
